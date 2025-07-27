@@ -5,11 +5,17 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field
-from typing import List
-import uuid
-from datetime import datetime
 
+# Import database initialization
+from .database import init_database, close_database
+
+# Import route modules
+from .routes.staff_routes import router as staff_router
+from .routes.schedule_routes import router as schedule_router
+from .routes.attendance_routes import router as attendance_router
+from .routes.template_routes import router as template_router
+from .routes.voice_routes import router as voice_router
+from .routes.dashboard_routes import router as dashboard_router
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -17,44 +23,39 @@ load_dotenv(ROOT_DIR / '.env')
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+db = client[os.environ.get('DB_NAME', 'staff_utility_app')]
 
 # Create the main app without a prefix
-app = FastAPI()
+app = FastAPI(title="Staff Utility App API", version="1.0.0", description="Voice-Enabled Staff Utility Application for Educational Institutions")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
-
-# Define Models
-class StatusCheck(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
-
-class StatusCheckCreate(BaseModel):
-    client_name: str
-
-# Add your routes to the router instead of directly to app
+# Basic health check endpoint
 @api_router.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"message": "Staff Utility App API is running!", "version": "1.0.0"}
 
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.dict()
-    status_obj = StatusCheck(**status_dict)
-    _ = await db.status_checks.insert_one(status_obj.dict())
-    return status_obj
+@api_router.get("/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "service": "Staff Utility App API",
+        "version": "1.0.0"
+    }
 
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    status_checks = await db.status_checks.find().to_list(1000)
-    return [StatusCheck(**status_check) for status_check in status_checks]
+# Include all route modules
+api_router.include_router(staff_router)
+api_router.include_router(schedule_router)
+api_router.include_router(attendance_router)
+api_router.include_router(template_router)
+api_router.include_router(voice_router)
+api_router.include_router(dashboard_router)
 
 # Include the router in the main app
 app.include_router(api_router)
 
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
@@ -70,6 +71,28 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+@app.on_event("startup")
+async def startup_db_client():
+    """Initialize database on startup"""
+    logger.info("🚀 Starting up Staff Utility App API...")
+    try:
+        await init_database()
+        logger.info("✅ Database initialized successfully")
+    except Exception as e:
+        logger.error(f"❌ Error initializing database: {e}")
+        raise
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
-    client.close()
+    """Close database connection on shutdown"""
+    logger.info("🔄 Shutting down Staff Utility App API...")
+    try:
+        await close_database()
+        client.close()
+        logger.info("✅ Database connection closed successfully")
+    except Exception as e:
+        logger.error(f"❌ Error closing database connection: {e}")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8001)
