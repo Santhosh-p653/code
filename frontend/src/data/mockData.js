@@ -2,13 +2,13 @@
 
 export const mockStaffProfile = {
   id: 1,
-  name: "Dr. Sarah Johnson",
+  name: "Dr. ARUN",
   role: "Senior Mathematics Teacher",
   employeeId: "EMP001",
   department: "Mathematics Department",
   subjects: ["Advanced Calculus", "Statistics", "Algebra II"],
-  email: "sarah.johnson@school.edu",
-  phone: "+1 (555) 123-4567",
+  email: "aruncse.edu",
+  phone: "+91 9715557123",
   joinDate: "2018-09-15",
   avatar: "https://images.unsplash.com/photo-1494790108755-2616b67d62b9?w=150&h=150&fit=crop&crop=face"
 };
@@ -62,11 +62,11 @@ export const mockAttendance = [
     absent: 2,
     late: 0,
     students: [
-      { id: 1, name: "Alice Cooper", status: "present" },
-      { id: 2, name: "Bob Smith", status: "present" },
-      { id: 3, name: "Charlie Brown", status: "absent" },
-      { id: 4, name: "Diana Ross", status: "present" },
-      { id: 5, name: "Edward Norton", status: "absent" }
+      { id: 1, name: "Ashwant", status: "present" },
+      { id: 2, name: "Brijosh", status: "present" },
+      { id: 3, name: "Cindrella", status: "absent" },
+      { id: 4, name: "Disha", status: "present" },
+      { id: 5, name: "Ram", status: "absent" }
     ]
   }
 ];
